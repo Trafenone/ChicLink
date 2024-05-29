@@ -6,7 +6,7 @@ public class User : IdentityUser<Guid>
 {
     public string FirstName { get; set; } = null!;
     public string LastName { get; set; } = null!;
-    public DateOnly BirthDay { get; set; }
+    public DateOnly Birthday { get; set; }
     public bool Sex { get; set; }
     public string Location { get; set; } = null!;
 }
