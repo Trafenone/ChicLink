@@ -32,70 +32,57 @@ public class UsersController : ControllerBase
         return Ok(await _context.Users.ToListAsync());
     }
 
-    [HttpPost]
-    [Route("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<User>> GetUser(Guid id)
     {
-        var user = await _userManager.FindByEmailAsync(request.Email);
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
 
-        if (user == null && !await _userManager.CheckPasswordAsync(user, request.Password))
-            return Unauthorized();
+        if (user == null)
+            return NotFound();
 
-        var accessToken = GetToken([new(ClaimTypes.Email, user.Email!)]);
-
-        var refreshToken = await _userManager.GenerateUserTokenAsync(user, TokenOptions.DefaultProvider, "RefreshToken");
-        await _userManager.SetAuthenticationTokenAsync(user, TokenOptions.DefaultProvider, "RefreshToken", refreshToken);
-
-        return Ok(new
-        {
-            AccessToken = new JwtSecurityTokenHandler().WriteToken(accessToken),
-            RefreshToken = refreshToken,
-            Expiration = accessToken.ValidTo
-        });
+        return Ok(user);
     }
 
-    [HttpPost]
-    [Route("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterUserRequest request)
+    [HttpPut("{id:Guid}")]
+    public async Task<IActionResult> UpdateUser(Guid id, User user)
     {
-        var userExists = _userManager.FindByEmailAsync(request.Email);
-        if (userExists.Result != null)
-            return BadRequest("User with this email already exists");
-
-        var user = new User()
+        if (id != user.Id)
         {
-            UserName = request.FirstName.ToLower()[0] + request.LastName.ToLower(),
-            FirstName = request.FirstName,
-            LastName = request.LastName,
-            Email = request.Email,
-            PhoneNumber = request.Phone,
-            Birthday = request.Birthday,
-            Sex = request.Sex,
-            Location = request.Location
-        };
-
-        var result = await _userManager.CreateAsync(user, request.Password);
-        if (!result.Succeeded)
-        {
-            var identityError = result.Errors.FirstOrDefault();
-            return Problem(identityError?.Description);
+            return BadRequest();
         }
 
-        return Created();
+        try
+        {
+            _context.Update(user);
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!_context.Users.Any(u => u.Id == id))
+            {
+                return NotFound();
+            }
+            else
+            {
+                throw;
+            }
+        }
+
+        return NoContent();
     }
 
-    private JwtSecurityToken GetToken(List<Claim> authClaims)
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeleteUser(Guid id)
     {
-        var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:SecretKey"]));
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+        if (user == null)
+        {
+            return NotFound();
+        }
 
-        var token = new JwtSecurityToken(
-            issuer: _configuration["JwtSettings:ValidIssuer"],
-            audience: _configuration["JwtSettings:ValidAudience"],
-            expires: DateTime.Now.AddHours(3),
-            claims: authClaims,
-            signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
-        );
+        _context.Users.Remove(user);
+        await _context.SaveChangesAsync();
 
-        return token;
+        return NoContent();
     }
 }
