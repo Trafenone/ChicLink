@@ -1,12 +1,17 @@
 ﻿using Data;
 using Data.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers;
 
+/// <summary>
+/// Controller for managing likes.
+/// </summary>
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class LikesController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
@@ -16,7 +21,19 @@ public class LikesController : ControllerBase
         _context = context;
     }
 
+    /// <summary>
+    /// Adds a like from one user to another.
+    /// </summary>
+    /// <remarks>
+    /// Creates a like record if it does not already exist
+    /// </remarks>
+    /// <param name="senderId">ID of the user sending the like.</param>
+    /// <param name="receiverId">ID of the user receiving the like.</param>
+    /// <returns>Action result with the like information.</returns>
     [HttpPost]
+    [ProducesResponseType(typeof(Like), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(BadRequestResult), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(NotFoundResult), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> AddLike(Guid senderId, Guid receiverId)
     {
         if (senderId == receiverId)
@@ -46,7 +63,17 @@ public class LikesController : ControllerBase
         return Ok(like);
     }
 
+    /// <summary>
+    /// Gets the likes received by a user.
+    /// </summary>
+    /// <remarks>
+    /// Returns a list of likes received by the specified user.
+    /// </remarks>
+    /// <param name="userId">ID of the user.</param>
+    /// <returns>Action result with the list of likes received by the user.</returns>
     [HttpGet("{userId:guid}")]
+    [ProducesResponseType(typeof(IEnumerable<Like>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(NotFoundResult), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetUserLikes(Guid userId)
     {
         var user = await _context.Users
@@ -60,7 +87,18 @@ public class LikesController : ControllerBase
         return Ok(likes);
     }
 
+    /// <summary>
+    /// Deletes a like.
+    /// </summary>
+    /// <remarks>
+    /// Removes a like record if it exists.
+    /// </remarks>
+    /// <param name="senderId">ID of the user who sent the like.</param>
+    /// <param name="receiverId">ID of the user who received the like.</param>
+    /// <returns>Action result indicating the outcome of the operation.</returns>
     [HttpDelete("{senderId}/{receiverId}")]
+    [ProducesResponseType(typeof(NotFoundResult), StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(NotFoundResult), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteLike(Guid senderId, Guid receiverId)
     {
         var like = await _context.Likes

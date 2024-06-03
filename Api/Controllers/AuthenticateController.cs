@@ -1,36 +1,54 @@
-﻿using Data.Models;
+﻿using Api.Models.Authenticate;
+using Api.Models.Identity;
 using Data;
-using Microsoft.AspNetCore.Http;
+using Data.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using System.Security.Cryptography;
-using Azure.Core;
-using Api.Models.Identity;
-using Api.Models.Authenticate;
-using Microsoft.EntityFrameworkCore;
+using System.Text;
 
 namespace Api.Controllers;
 
+/// <summary>
+/// Controller for authentication operations.
+/// </summary>
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class AuthenticateController : ControllerBase
 {
-    private readonly ApplicationDbContext _context;
     private readonly UserManager<User> _userManager;
-    private readonly IConfiguration _configuration;
+    private readonly JwtSettings _jwtSettings;
 
-    public AuthenticateController(ApplicationDbContext context, UserManager<User> userManager, IConfiguration configuration, IWebHostEnvironment hostEnvironment)
+    public AuthenticateController(UserManager<User> userManager, IConfiguration configuration)
     {
-        _context = context;
         _userManager = userManager;
-        _configuration = configuration;
+        _jwtSettings = new JwtSettings
+        {
+            ValidAudience = configuration["Audience"],
+            ValidIssuer = configuration["Issuer"],
+            SecretKey = configuration["SecretKey"]
+        };
     }
 
+    /// <summary>
+    /// Log in a user.
+    /// </summary>
+    /// <remarks>
+    /// Logs in a user with provided credentials and returns JWT tokens.
+    /// </remarks>
+    /// <param name="request">Login request.</param>
+    /// <returns>Access token and refresh token.</returns>
     [HttpPost("login")]
+    [AllowAnonymous]
+    [Produces("application/json")]
+    [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UnauthorizedResult), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var user = await _userManager.FindByEmailAsync(request.Email);
@@ -41,7 +59,7 @@ public class AuthenticateController : ControllerBase
         var accessToken = GetToken([new(ClaimTypes.Email, user.Email!)]);
         var refreshToken = GenerateRefreshToken();
 
-        return Ok(new
+        return Ok(new LoginResponse
         {
             AccessToken = new JwtSecurityTokenHandler().WriteToken(accessToken),
             RefreshToken = refreshToken,
@@ -49,7 +67,18 @@ public class AuthenticateController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// Register a new user.
+    /// </summary>
+    /// <remarks>
+    /// Registers a new user with provided details.
+    /// </remarks>
+    /// <param name="request">Registration request.</param>
+    /// <returns>Response status.</returns>
     [HttpPost("register")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(BadRequestObjectResult), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Register([FromBody] RegisterUserRequest request)
     {
         var userExists = _userManager.FindByEmailAsync(request.Email);
@@ -79,7 +108,18 @@ public class AuthenticateController : ControllerBase
         return Created();
     }
 
+    /// <summary>
+    /// Change user password.
+    /// </summary>
+    /// <remarks>
+    /// Changes the password for a user if the old password matches.
+    /// </remarks>
+    /// <param name="request">Change password request.</param>
+    /// <returns>Response status.</returns>
     [HttpPost("change-password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(NotFoundResult), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(BadRequestResult), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
         var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == request.UserId);
@@ -93,32 +133,40 @@ public class AuthenticateController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Refresh access token using refresh token.
+    /// </summary>
+    /// <remarks>
+    /// Refreshes the JWT token if the refresh token is valid.
+    /// </remarks>
+    /// <param name="request">Token request.</param>
+    /// <returns>New access token and refresh token.</returns>
     [HttpPost("refresh-token")]
+    [ProducesResponseType(typeof(TokenResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(BadRequestObjectResult), StatusCodes.Status400BadRequest)]
     public IActionResult RefreshToken([FromBody] TokenRequest request)
     {
         var principal = GetPrincipalFromExpiredToken(request.Token);
         if (principal == null)
-        {
             return BadRequest("Invalid token");
-        }
 
         var newJwtToken = GetToken(principal.Claims.ToList());
         var newRefreshToken = GenerateRefreshToken();
 
-        return Ok(new
+        return Ok(new TokenResponse
         {
-            token = new JwtSecurityTokenHandler().WriteToken(newJwtToken),
-            refreshToken = newRefreshToken
+            Token = new JwtSecurityTokenHandler().WriteToken(newJwtToken),
+            RefreshToken = newRefreshToken
         });
     }
 
     private JwtSecurityToken GetToken(List<Claim> authClaims)
     {
-        var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:SecretKey"]));
+        var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
 
         var token = new JwtSecurityToken(
-            issuer: _configuration["JwtSettings:ValidIssuer"],
-            audience: _configuration["JwtSettings:ValidAudience"],
+            issuer: _jwtSettings.ValidIssuer,
+            audience: _jwtSettings.ValidAudience,
             expires: DateTime.Now.AddHours(3),
             claims: authClaims,
             signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
@@ -142,7 +190,7 @@ public class AuthenticateController : ControllerBase
             ValidateAudience = false,
             ValidateIssuer = false,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:SecretKey"])),
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey)),
             ValidateLifetime = false
         };
 
