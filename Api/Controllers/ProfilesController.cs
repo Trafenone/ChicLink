@@ -1,10 +1,8 @@
 ﻿using Api.Models.Profiles;
 using Data;
 using Data.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Api.Controllers;
 
