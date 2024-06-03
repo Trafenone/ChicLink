@@ -35,7 +35,13 @@ public class UsersController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<User>> GetUser(Guid id)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+        var user = await _context.Users
+            .Include(u => u.Profile)
+            .Include(u => u.LikesSent)
+            .Include(u => u.LikesReceived)
+            .Include(u => u.MessagesSent)
+            .Include(u => u.MessagesReceived)
+            .FirstOrDefaultAsync(u => u.Id == id);
 
         if (user == null)
             return NotFound();
@@ -43,30 +49,23 @@ public class UsersController : ControllerBase
         return Ok(user);
     }
 
-    [HttpPut("{id:Guid}")]
-    public async Task<IActionResult> UpdateUser(Guid id, User user)
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateUser(Guid id, UpdateUserRequest request)
     {
-        if (id != user.Id)
-        {
+        if(id != request.UserId)
             return BadRequest();
-        }
 
-        try
-        {
-            _context.Update(user);
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!_context.Users.Any(u => u.Id == id))
-            {
-                return NotFound();
-            }
-            else
-            {
-                throw;
-            }
-        }
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+
+        if (user == null)
+            return NotFound();
+
+        user.FirstName = request.Firstname;
+        user.LastName = request.Lastname;
+        user.Location = request.Location;
+
+        _context.Update(user);
+        await _context.SaveChangesAsync();
 
         return NoContent();
     }

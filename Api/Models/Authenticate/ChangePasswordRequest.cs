@@ -1,15 +1,14 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Api.Models.Authenticate
+namespace Api.Models.Authenticate;
+
+public class ChangePasswordRequest
 {
-    public class ChangePasswordRequest
-    {
-        public Guid UserId { get; set; }
+    public Guid UserId { get; set; }
 
-        [Required]
-        public string OldPassword { get; set; }
+    [Required]
+    public string OldPassword { get; set; }
 
-        [Required]
-        public string NewPassword { get; set; }
-    }
+    [Required]
+    public string NewPassword { get; set; }
 }

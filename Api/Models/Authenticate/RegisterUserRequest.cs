@@ -1,6 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Data.Models;
+using System.ComponentModel.DataAnnotations;
 
-namespace Api.Models.Users;
+namespace Api.Models.Authenticate;
 
 public class RegisterUserRequest
 {
@@ -20,9 +21,9 @@ public class RegisterUserRequest
     public DateOnly Birthday { get; set; }
 
     [Required]
-    public bool Sex { get; set; }
+    public Gender Gender { get; set; }
 
-    [Required] 
+    [Required]
     public string Location { get; set; } = null!;
 
     [Required]
@@ -31,6 +32,4 @@ public class RegisterUserRequest
     [Required]
     [Compare(nameof(Password))]
     public string ConfirmPassword { get; set; } = null!;
-
-    public List<IFormFile> ProfilePhotos { get; set; }
 }

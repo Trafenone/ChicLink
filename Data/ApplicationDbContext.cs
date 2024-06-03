@@ -11,7 +11,7 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
     public DbSet<Photo> Photos { get; set; }
     public DbSet<Message> Messages { get; set; }
     public DbSet<Like> Likes { get; set; }
-    public DbSet<Dislike> Dislikes { get; set; }
+    //public DbSet<Dislike> Dislikes { get; set; }
 
     public ApplicationDbContext(DbContextOptions options) : base(options)
     {
@@ -21,11 +21,6 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-
-        builder.Entity<User>()
-           .HasMany(u => u.Photos)
-           .WithOne(p => p.User)
-           .HasForeignKey(p => p.UserId);
 
         builder.Entity<User>()
             .HasMany(u => u.MessagesSent)
@@ -50,5 +45,11 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<Guid>, 
             .WithOne(l => l.Receiver)
             .HasForeignKey(l => l.ReceiverId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<Profile>()
+            .HasMany(profile => profile.Photos)
+            .WithOne(photo => photo.Profile)
+            .HasForeignKey(photo => photo.ProfileId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
