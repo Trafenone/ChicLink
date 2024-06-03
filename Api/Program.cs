@@ -33,6 +33,28 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddSwaggerGen(options =>
 {
+    var jwtSecurityScheme = new OpenApiSecurityScheme()
+    {
+        BearerFormat = "JWT",
+        Name = "JWT Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = JwtBearerDefaults.AuthenticationScheme,
+        Description = "Please enter your JWT Bearer token into field below",
+
+        Reference = new OpenApiReference
+        {
+            Id = JwtBearerDefaults.AuthenticationScheme,
+            Type = ReferenceType.SecurityScheme
+        }
+    };
+
+    options.AddSecurityDefinition(jwtSecurityScheme.Reference.Id, jwtSecurityScheme);
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {   jwtSecurityScheme, Array.Empty<string>() }
+    });
+
     options.SwaggerDoc("v1", new OpenApiInfo
     {
         Version = "v1",
