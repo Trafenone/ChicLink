@@ -31,4 +31,6 @@ public class RegisterUserRequest
     [Required]
     [Compare(nameof(Password))]
     public string ConfirmPassword { get; set; } = null!;
+
+    public List<IFormFile> ProfilePhotos { get; set; }
 }

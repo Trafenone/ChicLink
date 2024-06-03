@@ -11,6 +11,8 @@ using System.Text;
 using System.Security.Cryptography;
 using Azure.Core;
 using Api.Models.Identity;
+using Api.Models.Authenticate;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers
 {
@@ -21,12 +23,14 @@ namespace Api.Controllers
         private readonly ApplicationDbContext _context;
         private readonly UserManager<User> _userManager;
         private readonly IConfiguration _configuration;
+        private readonly IWebHostEnvironment _hostEnvironment;
 
-        public AuthenticateController(ApplicationDbContext context, UserManager<User> userManager, IConfiguration configuration)
+        public AuthenticateController(ApplicationDbContext context, UserManager<User> userManager, IConfiguration configuration, IWebHostEnvironment hostEnvironment)
         {
             _context = context;
             _userManager = userManager;
             _configuration = configuration;
+            _hostEnvironment = hostEnvironment;
         }
 
         [HttpPost]
@@ -35,7 +39,7 @@ namespace Api.Controllers
         {
             var user = await _userManager.FindByEmailAsync(request.Email);
 
-            if (user == null && !await _userManager.CheckPasswordAsync(user, request.Password))
+            if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
                 return Unauthorized();
 
             var accessToken = GetToken([new(ClaimTypes.Email, user.Email!)]);
@@ -51,7 +55,7 @@ namespace Api.Controllers
 
         [HttpPost]
         [Route("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterUserRequest request)
+        public async Task<IActionResult> Register([FromForm] RegisterUserRequest request)
         {
             var userExists = _userManager.FindByEmailAsync(request.Email);
             if (userExists.Result != null)
@@ -59,14 +63,15 @@ namespace Api.Controllers
 
             var user = new User()
             {
-                UserName = request.FirstName.ToLower()[0] + request.LastName.ToLower(),
+                UserName = request.Email,
+                //UserName = request.FirstName.ToLower()[0] + request.LastName.ToLower(),
                 FirstName = request.FirstName,
                 LastName = request.LastName,
                 Email = request.Email,
                 PhoneNumber = request.Phone,
                 Birthday = request.Birthday,
                 Sex = request.Sex,
-                Location = request.Location
+                Location = request.Location,
             };
 
             var result = await _userManager.CreateAsync(user, request.Password);
@@ -76,7 +81,48 @@ namespace Api.Controllers
                 return Problem(identityError?.Description);
             }
 
+            if (request.ProfilePhotos != null && request.ProfilePhotos.Count > 0)
+            {
+                var uploadsFolderPath = Path.Combine(_hostEnvironment.WebRootPath, "uploads");
+                if (!Directory.Exists(uploadsFolderPath))
+                    Directory.CreateDirectory(uploadsFolderPath);
+
+                foreach (var file in request.ProfilePhotos)
+                {
+                    var fileName = $"{Guid.NewGuid()}_{file.FileName}";
+                    var filePath = Path.Combine(uploadsFolderPath, fileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+                    }
+
+                    var photo = new Photo
+                    {
+                        UserId = user.Id,
+                        Url = $"/uploads/{fileName}"
+                    };
+
+                    await _context.Photos.AddAsync(photo);
+                    await _context.SaveChangesAsync();
+                }
+            }
+
             return Created();
+        }
+
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+        {
+            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == request.UserId);
+            if (user == null)
+                return NotFound();
+
+            var result = await _userManager.ChangePasswordAsync(user, request.OldPassword, request.NewPassword);
+            if (!result.Succeeded)
+                return Problem(result.Errors.FirstOrDefault()?.Description);
+
+            return NoContent();
         }
 
         [HttpPost("refresh-token")]
