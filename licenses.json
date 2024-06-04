@@ -1,0 +1,104 @@
+[
+  {
+    "PackageName": "Microsoft.AspNetCore.Authentication.JwtBearer",
+    "PackageVersion": "8.0.4",
+    "PackageUrl": "https://asp.net/",
+    "Copyright": "© Microsoft Corporation. All rights reserved.",
+    "Authors": [
+      "Microsoft"
+    ],
+    "Description": "ASP.NET Core middleware that enables an application to receive an OpenID Connect bearer token.\r\n\r\nThis package was built from the source code at https://github.com/dotnet/aspnetcore/tree/8486d31e24f30e3fa1809a95699a0adc16f448d7",
+    "LicenseUrl": "https://licenses.nuget.org/MIT",
+    "LicenseType": "MIT",
+    "Repository": {
+      "Type": "git",
+      "Url": "https://github.com/dotnet/aspnetcore",
+      "Commit": "8486d31e24f30e3fa1809a95699a0adc16f448d7"
+    }
+  },
+  {
+    "PackageName": "Microsoft.AspNetCore.Identity.EntityFrameworkCore",
+    "PackageVersion": "8.0.4",
+    "PackageUrl": "https://asp.net/",
+    "Copyright": "© Microsoft Corporation. All rights reserved.",
+    "Authors": [
+      "Microsoft"
+    ],
+    "Description": "ASP.NET Core Identity provider that uses Entity Framework Core.\r\n\r\nThis package was built from the source code at https://github.com/dotnet/aspnetcore/tree/8486d31e24f30e3fa1809a95699a0adc16f448d7",
+    "LicenseUrl": "https://licenses.nuget.org/MIT",
+    "LicenseType": "MIT",
+    "Repository": {
+      "Type": "git",
+      "Url": "https://github.com/dotnet/aspnetcore",
+      "Commit": "8486d31e24f30e3fa1809a95699a0adc16f448d7"
+    }
+  },
+  {
+    "PackageName": "Microsoft.EntityFrameworkCore.SqlServer",
+    "PackageVersion": "8.0.4",
+    "PackageUrl": "https://docs.microsoft.com/ef/core/",
+    "Copyright": "© Microsoft Corporation. All rights reserved.",
+    "Authors": [
+      "Microsoft"
+    ],
+    "Description": "Microsoft SQL Server database provider for Entity Framework Core.",
+    "LicenseUrl": "https://licenses.nuget.org/MIT",
+    "LicenseType": "MIT",
+    "Repository": {
+      "Type": "git",
+      "Url": "https://github.com/dotnet/efcore",
+      "Commit": "0e8ece3526ef3575fb85de308b8a4cd5840f928e"
+    }
+  },
+  {
+    "PackageName": "Microsoft.EntityFrameworkCore.Tools",
+    "PackageVersion": "8.0.4",
+    "PackageUrl": "https://docs.microsoft.com/ef/core/",
+    "Copyright": "© Microsoft Corporation. All rights reserved.",
+    "Authors": [
+      "Microsoft"
+    ],
+    "Description": "Entity Framework Core Tools for the NuGet Package Manager Console in Visual Studio.\r\n\r\nEnables these commonly used commands:\r\nAdd-Migration\r\nBundle-Migration\r\nDrop-Database\r\nGet-DbContext\r\nGet-Migration\r\nOptimize-DbContext\r\nRemove-Migration\r\nScaffold-DbContext\r\nScript-Migration\r\nUpdate-Database",
+    "LicenseUrl": "https://licenses.nuget.org/MIT",
+    "LicenseType": "MIT",
+    "Repository": {
+      "Type": "git",
+      "Url": "https://github.com/dotnet/efcore",
+      "Commit": "0e8ece3526ef3575fb85de308b8a4cd5840f928e"
+    }
+  },
+  {
+    "PackageName": "Swashbuckle.AspNetCore",
+    "PackageVersion": "6.5.0",
+    "PackageUrl": "https://github.com/domaindrivendev/Swashbuckle.AspNetCore",
+    "Copyright": "",
+    "Authors": [
+      "Swashbuckle.AspNetCore"
+    ],
+    "Description": "Swagger tools for documenting APIs built on ASP.NET Core",
+    "LicenseUrl": "https://licenses.nuget.org/MIT",
+    "LicenseType": "MIT",
+    "Repository": {
+      "Type": "git",
+      "Url": "https://github.com/domaindrivendev/Swashbuckle.AspNetCore.git",
+      "Commit": ""
+    }
+  },
+  {
+    "PackageName": "Swashbuckle.AspNetCore.Annotations",
+    "PackageVersion": "6.6.2",
+    "PackageUrl": "https://github.com/domaindrivendev/Swashbuckle.AspNetCore",
+    "Copyright": "Copyright (c) 2016-2024 Richard Morris",
+    "Authors": [
+      "domaindrivendev"
+    ],
+    "Description": "Provides custom attributes that can be applied to controllers, actions and models to enrich the generated Swagger",
+    "LicenseUrl": "https://licenses.nuget.org/MIT",
+    "LicenseType": "MIT",
+    "Repository": {
+      "Type": "git",
+      "Url": "https://github.com/domaindrivendev/Swashbuckle.AspNetCore.git",
+      "Commit": "fe87e6d4ce56cda59474763067b929d4d92fd146"
+    }
+  }
+]
